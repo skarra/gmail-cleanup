@@ -10,7 +10,10 @@ from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://mail.google.com/']
-TARGET_LABEL='Lists/Linux Kernel' #### UPDATE ####
+
+TARGET_LABEL='Lists/Linux Kernel' # FIXME: Modify to taste
+NUM_LOOPS=100                     # FIXME: Modify to taste
+MSGS_PER_LOOP=25                  # Keep it <= 500
 
 def main():
     """Shows basic usage of the Gmail API.
@@ -50,10 +53,17 @@ def main():
         if target_label_id == None:
             print("Could not find Targe label: ", TARGET_LABEL)
             return None
-        print("Your chosen label name: ", TARGET_LABEL, "; ID: ", target_label_id)
+        print("Processing label name: %s; ID: %s" % (TARGET_LABEL, target_label_id))
 
-        delete_messages_with_label_id(service, target_label_id, 10)
-        # sanity_check_messages_with_label_id(service, target_label_id)
+        ## Useful for a dry run before deleting them
+        # inspect_messages_with_label_id(service, target_label_id)
+
+        for i in range(NUM_LOOPS):
+            print("Iteration %d..." % i)
+            ret = delete_messages_with_label_id(service, target_label_id,
+                                                MSGS_PER_LOOP)
+            if not ret:
+                break
     
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
@@ -61,22 +71,30 @@ def main():
 
 
 def delete_messages_with_label_id (service, label_id, max):
+    """Attempt to delete up to max messages with given label_id.
+    Returns True if more messages exist to be deleted
+    Returns False otherwise."""
+
     label=service.users().labels().get(userId='me', id=label_id).execute()
-    print("Everything we know about the label: ", label)
+    total_msgs = label['messagesTotal']
+    total_threads =  label['threadsTotal']
+    print("  Total Messages: %d; Total Threads: %d" % (total_msgs,
+                                                       total_threads))
+    if total_msgs == 0:
+        return False
 
     results = service.users().messages().list(userId='me',
                                               labelIds=[label_id],
                                               maxResults=max).execute()
 
     mids= [m['id'] for m in results['messages']]
-    print("Processing following messages..", len(mids))
-    for mid in mids:
-        print_message_id(service, mid)
+    count = len(mids)
 
-    print("Executing batch delete operation...")
+    print("  Batch deleting %d messages..." % count)
     results=service.users().messages().batchDelete(userId='me',
                                                    body={'ids':mids}).execute()
-    print(results)
+
+    return total_msgs > max
     
 def print_message_id (service, mid):    
     mb = service.users().messages().get(userId='me', id=mid).execute()
@@ -91,7 +109,7 @@ def print_message_id (service, mid):
 
 ## Fetch 10 messages with the given label id and print out some details for
 ## each message, allowing manual verifiation that we are picking up the right stuff.
-def sanity_check_messages_with_label_id (service, label_id):
+def inspect_messages_with_label_id (service, label_id):
     label=service.users().labels().get(userId='me', id=label_id).execute()
     print("Everything we know about the label: ", label)
 
