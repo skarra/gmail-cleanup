@@ -1,3 +1,16 @@
+##
+## Created: Fri Oct 07 23:41:16 PDT 2022
+##
+## Copyright (C) 2022 Sriram Karra <karra.etc@gmail.com>
+##
+## Distributed under the very permissive "Do Whatever the Hell You Want With
+## It" license.
+##
+## This program is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.
+
+
 from __future__ import print_function
 
 import os.path
