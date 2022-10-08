@@ -1,10 +1,12 @@
 This program uses the Gmail API to bulk delete emails with a
 specific label.
 
-This is meant to workaround a long standing bug in Gmail that makes it
-impossible to delete very large number of messages at one shot. This
-bug also applies to many other bulk operations, but it is the delete
-that affected me personally.
+I wrote this program to workaround a long standing bug in Gmail that
+makes it impossible to delete very large number of messages through a
+bulk UI operation. This bug also affects many other bulk operations,
+but it is the delete that affected me personally as I was running out
+of quota and found myself unable to delete messages I no longer cared
+about.
 
 This is intended for personal use and offered without any sort of
 warranty, under the very permissive "Do Whatever the Hell You Want
@@ -35,3 +37,53 @@ Installation
 5. Also recommended is to look at the other inspection code (commented
 out by default) to first dry run the program before you start deleting
 stuff from your gmail.
+
+Sample Usage
+===
+
+One you are successfully set up invocation is simply via ```python
+main.py```. A successful run looks something like this:
+
+```
+$ python main.py
+Processing label name:  Lists/Linux Kernel ; ID:  Label_76
+Iteration 0...
+  Total Messages: 379966; Total Threads: 168425
+  Batch deleting 500 messages...
+
+Iteration 1...
+  Total Messages: 379466; Total Threads: 168175
+  Batch deleting 500 messages...
+
+Iteration 2...
+  Total Messages: 378966; Total Threads: 167917
+  Batch deleting 500 messages...
+
+Iteration 3...
+  Total Messages: 378466; Total Threads: 167717
+  Batch deleting 500 messages...
+
+Iteration 4...
+  Total Messages: 377966; Total Threads: 167501
+  Batch deleting 500 messages...
+
+Iteration 5...
+  Total Messages: 377466; Total Threads: 167273
+  Batch deleting 500 messages...
+
+Iteration 6...
+  Total Messages: 376966; Total Threads: 167052
+  Batch deleting 500 messages...
+
+Iteration 7...
+  Total Messages: 376466; Total Threads: 166882
+  Batch deleting 500 messages...
+
+Iteration 8...
+  Total Messages: 375966; Total Threads: 166675
+  Batch deleting 500 messages...
+```
+
+The number of iterations and number of messages per iteration are
+configurable within limits. The proram will terminate if no messages
+are left to be deleted.
