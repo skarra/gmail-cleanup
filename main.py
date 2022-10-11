@@ -13,7 +13,8 @@
 
 from __future__ import print_function
 
-import os.path
+import os.path, sys
+import argparse
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -24,11 +25,23 @@ from googleapiclient.errors import HttpError
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://mail.google.com/']
 
-TARGET_LABEL='Lists/Linux Kernel' # FIXME: Modify to taste
-NUM_LOOPS=100                     # FIXME: Modify to taste
-MSGS_PER_LOOP=25                  # Keep it <= 500
+MIN_MSGS_PER_LOOP=10
+MAX_MSGS_PER_LOOP=500                 # Keep it <= 500
+
+OP_DRY_RUN="dry-run"            # Prints information about specified label
+OP_DELETE_ALL="delete-all"      # Delete all mails with specified label
+OP_DELETE_SOME="delete-ten"     # as a small sanity check
+OP_PRINT_LABELS= "print-label-names" # Prints names of all labels
+
+OP_CHOICES = [OP_DRY_RUN, OP_DELETE_ALL, OP_DELETE_SOME, OP_PRINT_LABELS]
+
+parser = argparse.ArgumentParser()
 
 def main():
+    ## parse the command line and set up some global vars for convenience.
+    args = parse_cmdline();
+    flag_label_name = args.label_name
+
     """Shows basic usage of the Gmail API.
     Lists the user's Gmail labels.
     """
@@ -60,42 +73,64 @@ def main():
             print('No labels found.')
             return
 
-        # print_all_labels(labels)
+        if args.op == OP_PRINT_LABELS:
+            print_all_labels(labels)
+            return
 
-        target_label_id = find_target_label_id(labels, TARGET_LABEL)
+        if not args.label_name:
+            sys.stderr.write('Error: This operation requires a label name\n\n')
+            parser.print_help()
+            return
+
+        target_label_id = find_target_label_id(labels, flag_label_name)
         if target_label_id == None:
-            print("Could not find Targe label: ", TARGET_LABEL)
+            print("Could not find Target label: ", flag_label_name)
             return None
-        print("Processing label name: %s; ID: %s" % (TARGET_LABEL, target_label_id))
+
+        print("Processing label name: %s; ID: %s" % (flag_label_name,
+                                                     target_label_id))
 
         ## Useful for a dry run before deleting them
         # inspect_messages_with_label_id(service, target_label_id)
 
-        for i in range(NUM_LOOPS):
+        label=service.users().labels().get(userId='me',
+                                           id=target_label_id).execute()
+        total_msgs = label['messagesTotal']
+        total_threads =  label['threadsTotal']
+        print("  Total Messages: %d; Total Threads: %d" % (total_msgs,
+                                                           total_threads))
+        if total_msgs == 0:
+            return 0
+
+        if args.op == OP_DRY_RUN:
+            return 0
+
+        if args.op == OP_DELETE_ALL:
+            msgs_per_loop = MAX_MSGS_PER_LOOP
+            num_loops = int(total_msgs/msgs_per_loop) + 1
+        else:
+            msgs_per_loop = MIN_MSGS_PER_LOOP
+            num_loops = 1
+
+        for i in range(num_loops):
             print("Iteration %d..." % i)
-            ret = delete_messages_with_label_id(service, target_label_id,
-                                                MSGS_PER_LOOP)
-            if not ret:
-                break
+
+            delete_messages_with_label_id(service, target_label_id,
+                                          msgs_per_loop)
     
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
 
 
+def parse_cmdline ():
+    parser.add_argument("--op", help="What to do. Default to 'dry-run'",
+                        type=str, choices=OP_CHOICES, default=OP_DRY_RUN)
+    parser.add_argument("--label-name", help="specify name of label to operate on")
+
+    return parser.parse_args()
+
 def delete_messages_with_label_id (service, label_id, max):
-    """Attempt to delete up to max messages with given label_id.
-    Returns True if more messages exist to be deleted
-    Returns False otherwise."""
-
-    label=service.users().labels().get(userId='me', id=label_id).execute()
-    total_msgs = label['messagesTotal']
-    total_threads =  label['threadsTotal']
-    print("  Total Messages: %d; Total Threads: %d" % (total_msgs,
-                                                       total_threads))
-    if total_msgs == 0:
-        return False
-
     results = service.users().messages().list(userId='me',
                                               labelIds=[label_id],
                                               maxResults=max).execute()
@@ -106,8 +141,6 @@ def delete_messages_with_label_id (service, label_id, max):
     print("  Batch deleting %d messages..." % count)
     results=service.users().messages().batchDelete(userId='me',
                                                    body={'ids':mids}).execute()
-
-    return total_msgs > max
     
 def print_message_id (service, mid):    
     mb = service.users().messages().get(userId='me', id=mid).execute()

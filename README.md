@@ -32,20 +32,32 @@ Installation
 
 3. Move the credentials file to the cloned repo, and call it 'credentials.json'
 
-4. Open main.py and edit the label name, and NUM_LOOPS constants to match your requirements.
+4. Do a dry run to see how many mssages of your label will get nuked,
+and then invoke the command to actually nuke them.
 
-5. Also recommended is to look at the other inspection code (commented
+5. I would recommended is to look at the other inspection code (commented
 out by default) to first dry run the program before you start deleting
 stuff from your gmail.
 
 Sample Usage
 ===
 
-One you are successfully set up invocation is simply via ```python
-main.py```. A successful run looks something like this:
+A successful run looks something like this:
 
 ```
-$ python main.py
+$ python main.py -h
+
+usage: main.py [-h] [--op {dry-run,delete-all,delete-ten,print-label-names}]
+               [--label-name LABEL_NAME]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --op {dry-run,delete-all,delete-ten,print-label-names}
+                        What to do. Default to 'dry-run'
+  --label-name LABEL_NAME
+                        specify name of label to operate on
+
+$ python main.py --op delete-all --label-name 'Lists/Linux/Kernel'
 Processing label name:  Lists/Linux Kernel ; ID:  Label_76
 Iteration 0...
   Total Messages: 379966; Total Threads: 168425
