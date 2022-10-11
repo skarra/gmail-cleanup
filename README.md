@@ -57,7 +57,7 @@ optional arguments:
   --label-name LABEL_NAME
                         specify name of label to operate on
 
-$ python main.py --op delete-all --label-name 'Lists/Linux/Kernel'
+$ python main.py --op delete-all --label-name 'Lists/Linux Kernel'
 Processing label name:  Lists/Linux Kernel ; ID:  Label_76
 Iteration 0...
   Total Messages: 379966; Total Threads: 168425
